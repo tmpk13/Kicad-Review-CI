@@ -159,3 +159,10 @@ def test_config_rejects_unknown_keys(tmp_path, monkeypatch):
     p.write_text('relay_url = "https://r/"\n[podman]\ncommand = ["x"]\nmemory = "2g"\n')
     cfg = runner.load_config(p)
     assert (cfg.relay_url, cfg.token, cfg.podman, cfg.memory) == ("https://r", "t", ["x"], "2g")
+
+
+def test_example_config_loads(monkeypatch):
+    monkeypatch.setenv("HW_REVIEW_RUNNER_TOKEN", "t")
+    cfg = runner.load_config(ROOT / "runner/runner.example.toml")
+    assert cfg.relay_url.startswith("https://") and cfg.userns.startswith("keep-id")
+    assert "~" not in str(cfg.work_root)
