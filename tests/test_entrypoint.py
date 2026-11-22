@@ -99,7 +99,8 @@ def test_build_task_states_revision_limits_and_context():
 
 def test_claude_command_uses_job_options():
     cmd = ep.claude_command(JOB)
-    assert cmd[:3] == ["claude", "-p", "--bare"]
+    assert cmd[:2] == ["claude", "-p"] and "--bare" not in cmd
+    assert "Workflow" in cmd[cmd.index("--disallowedTools") + 1]
     assert cmd[cmd.index("--model") + 1] == "claude-opus-5-5"
     assert cmd[cmd.index("--effort") + 1] == "high"
     assert cmd[cmd.index("--max-budget-usd") + 1] == "20.00"

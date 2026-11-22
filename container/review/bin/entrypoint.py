@@ -115,6 +115,7 @@ def library_vars(project_dir: Path) -> set[str]:
 
 def clone_libraries(names: set[str], known: dict, dest: Path) -> dict:
     result = {}
+    dest.mkdir(parents=True, exist_ok=True)
     for name in sorted(names):
         entry = known.get(name)
         if not entry:
@@ -292,7 +293,8 @@ def build_task(job: dict, instructions: str, ctx: dict) -> str:
     if ctx["commit_message"]:
         lines.append(f"- Commit message: {ctx['commit_message']!r}")
     if ctx["drive_count"]:
-        lines.append(f"- Shared drive: {ctx['drive_count']} files in `/work/drive` (index `/work/drive/_drive-manifest.json`).")
+        n = ctx["drive_count"]
+        lines.append(f"- Shared drive: {n} file{'s' if n != 1 else ''} in `/work/drive` (index `/work/drive/_drive-manifest.json`).")
         if ctx["earlier_reviews"]:
             lines.append("- Earlier reviews in the shared drive: " + ", ".join(f"`{p}`" for p in ctx["earlier_reviews"][:10])
                          + ". Check which of their findings this commit resolves.")
@@ -309,11 +311,21 @@ def build_task(job: dict, instructions: str, ctx: dict) -> str:
     return "\n".join(lines) + "\n"
 
 
+# Tools with no use in an unattended run. Workflow would fan out paid agents.
+DISALLOWED_TOOLS = ["Workflow", "CronCreate", "CronDelete", "CronList", "ScheduleWakeup", "EnterWorktree",
+                    "ExitWorktree", "SendMessage", "ListAgents", "ReportFindings"]
+
+
 def claude_command(job: dict) -> list[str]:
+    # Not --bare: bare mode offers only Bash, Edit and Read (no Write, WebFetch,
+    # WebSearch or subagents). User settings come from the job's empty HOME, and the
+    # reviewed repository sits below the working directory, so its .claude/ settings
+    # and .mcp.json are not loaded.
     o = job["options"]
-    return ["claude", "-p", "--bare", "--output-format", "stream-json", "--verbose",
+    return ["claude", "-p", "--output-format", "stream-json", "--verbose",
             "--model", o["model"], "--effort", o["effort"], "--max-budget-usd", f"{float(o['budget_usd']):.2f}",
-            "--permission-mode", "bypassPermissions",
+            "--permission-mode", "bypassPermissions", "--setting-sources", "user", "--strict-mcp-config",
+            "--disallowedTools", ",".join(DISALLOWED_TOOLS),
             "--append-system-prompt-file", str(OPT / "prompts/ci-context.md"),
             "--add-dir", str(OUT), "--add-dir", str(OPT)]
 
