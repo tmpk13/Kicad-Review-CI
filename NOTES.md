@@ -95,7 +95,9 @@ Decisions and pitfalls, with the reasons. Open decisions are in [QUESTIONS.md](Q
   stops Claude Code (SIGINT, then a kill 30 s later) five minutes before it, leaving time
   for the .docx; the runner stops the container 60 s after it.
 - The review instructions are the workspace's PCB review prompt in ASCII
-  (`prompts/review-task.md`); `prompts/ci-context.md` adds the environment, working
+  (`prompts/review-task.md`), with the team's finding style: each finding opens with a
+  plain-language heading brief (no designators, part numbers, pins or nets), and the
+  designators start its body. `prompts/ci-context.md` adds the environment, working
   rules, KiCad 10 traps and the completion test; `prompts/context-<owner>.md` adds team
   pointers. A drive file named `review-prompt` overrides the instructions.
 

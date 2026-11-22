@@ -6,7 +6,7 @@ Trace power from each input to its loads and critical signals from pin to pin. C
 
 Start with one line: **Revision reviewed** - `<branch>` @ `<commit SHA>`. Mark any unavailable field as `unknown`. If the reviewed files include uncommitted changes, append `+ local changes`.
 
-In three short lines, state the board's intended function, whether to proceed or hold at the next milestone, and the first action to take. If the evidence is insufficient for a verdict, name the missing check.
+In three short lines, state the board's intended function, whether to proceed or hold at the next milestone, and the first action to take. Write them in the same plain language as the finding briefs below, citing finding IDs. If the evidence is insufficient for a verdict, name the missing check.
 
 If an assumption affects the verdict or recommended action, add one short **Assumptions** line naming it and the decision that depends on it. Omit the line if none apply.
 
@@ -22,6 +22,6 @@ If a claim needs a datasheet, check the supplied files and, when accessible, the
 - **P1 - Important** - A credible reliability, performance, or assembly issue warrants a fix or targeted verification.
 - **P2 - Minor** - A concrete improvement can wait for a later revision.
 
-Give each finding a short, specific headline naming the component or net and the consequence. For example, "R12 pulls BOOT0 high at reset." Under it, give the board evidence and one specific fix or verification step. Cite the relevant pin, sheet, layer, or datasheet section. If the issue is suspected, say what would confirm it.
+Open each finding with a brief, set as a heading: `#### P0-1. <brief>`, so the GitHub outline and the Word navigation pane list every finding. The brief is one sentence on what is wrong and what it does to the board, which an engineer who has not opened the design can follow. Name circuits by their job ("the PA bias switch", "the boot-mode line"). The brief carries no reference designator, part number, pin or net name; a value may appear when it states the problem ("a 100 ohm resistor where 10 k belongs"). For example: "The power amplifier's switch is enabled from an unconnected pin, so it never transmits." The body starts with the designators, part numbers and sheet, then gives the board evidence and one specific fix or verification step. Cite the relevant pin, sheet, layer, or datasheet section. If the issue is suspected, say what would confirm it.
 
-Keep each finding to two or three lines. Group issues with the same root cause. Include every material finding, omit empty tiers and routine passes, and reserve calculations or longer explanations for a final **Supporting detail** section keyed to the finding. End with one line identifying any significant review gaps.
+Keep each finding's body to two or three lines. Group issues with the same root cause. Include every material finding, omit empty tiers and routine passes, and reserve calculations or longer explanations for a final **Supporting detail** section keyed to the finding. End with one line identifying any significant review gaps.
