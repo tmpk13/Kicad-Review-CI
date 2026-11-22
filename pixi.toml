@@ -1,0 +1,10 @@
+[workspace]
+name = "hw-review-ci"
+channels = ["conda-forge"]
+platforms = ["linux-64"]
+
+# Test tooling only. The runner and the GitHub action script use the standard library,
+# so a host needs nothing but python3 >= 3.11 to run them.
+[dependencies]
+python = "3.12.*"
+pytest = ">=8,<9"

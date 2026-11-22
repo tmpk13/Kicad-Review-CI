@@ -1,0 +1,16 @@
+// Deployed by Cloudflare Workers Builds from this repository (root directory: relay),
+// not from a workstation. Secrets and settings are set in the Cloudflare dashboard;
+// SETUP.md lists them. keep_vars stops a deploy from deleting dashboard variables.
+{
+    "$schema": "node_modules/wrangler/config-schema.json",
+    "name": "hw-review-relay",
+    "main": "src/index.ts",
+    "compatibility_date": "2026-10-01",
+    "keep_vars": true,
+    "workers_dev": true,
+    "durable_objects": {
+        "bindings": [{ "name": "HUB", "class_name": "Hub" }]
+    },
+    "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Hub"] }],
+    "observability": { "enabled": true }
+}
