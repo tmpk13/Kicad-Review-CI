@@ -6,3 +6,4 @@
 - oresat-batteries `review` branch workflow switched from the batch request to the action (8b418ea in that repository)
 - Runner service installer and example config; README, SETUP, ARCHITECTURE, NOTES, QUESTIONS
 - Review prompt opens each finding with a plain-language heading brief, the team style of 2026-11-22 (d7bb584)
+- Brief lint for finding briefs, run by the model before it finishes and shown in the run record; prompt gains a word cap and grouped-finding briefs (64b578e)
