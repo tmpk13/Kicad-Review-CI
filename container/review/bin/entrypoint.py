@@ -15,6 +15,7 @@ starts the container. This script:
 Exit status 0 means /out/report.md exists; summary.json says whether it is complete.
 """
 
+import importlib.util
 import json
 import os
 import re
@@ -413,7 +414,27 @@ def finalize_report(report: Path, state: dict, record: list[str]) -> tuple[bool,
     return True, complete, error
 
 
-def run_record(job: dict, state: dict, ctx: dict, versions: dict) -> list[str]:
+def brief_check(report: Path) -> str | None:
+    """One line for the run record: what tools/brief_lint.py finds in the finding briefs."""
+    if not report.exists():
+        return None
+    try:
+        spec = importlib.util.spec_from_file_location("brief_lint", OPT / "tools/brief_lint.py")
+        if spec is None or spec.loader is None:
+            return "not run: tools/brief_lint.py is missing"
+        lint = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(lint)
+        problems = lint.check(report.read_text(errors="replace"))
+    except Exception as exc:  # a broken check must not cost the team the report
+        return f"not run: {exc}"
+    if not problems:
+        return "every finding brief is a plain-language heading"
+    where = list(dict.fromkeys(w for _, w, _ in problems))
+    shown = ", ".join(where[:10]) + (", ..." if len(where) > 10 else "")
+    return f"{len(problems)} problem{'s' if len(problems) > 1 else ''} ({shown}); run `brief_lint.py` on the report"
+
+
+def run_record(job: dict, state: dict, ctx: dict, versions: dict, briefs: str | None = None) -> list[str]:
     o = job["options"]
     result = state.get("result") or {}
     cost = result.get("total_cost_usd")
@@ -429,6 +450,8 @@ def run_record(job: dict, state: dict, ctx: dict, versions: dict) -> list[str]:
         ("Tools", f"Claude Code {versions['claude']}, KiCad {versions['kicad']}"),
         ("Job", f"{job['id']}, https://github.com/{job['repo']}/actions/runs/{job['run_id']}"),
     ]
+    if briefs:
+        rows.insert(-1, ("Brief check", briefs))
     return ["## Review run", "", "| | |", "|---|---|", *[f"| {k} | {v} |" for k, v in rows]]
 
 
@@ -514,7 +537,8 @@ def main() -> int:
 
         progress("report", "writing the report and its .docx copy")
         report = OUT / "report.md"
-        has_report, complete, error = finalize_report(report, state, run_record(job, state, ctx, versions))
+        record = run_record(job, state, ctx, versions, brief_check(report))
+        has_report, complete, error = finalize_report(report, state, record)
         summary.update(ok=has_report, complete=complete, error=error)
         if has_report:
             summary["report_name"] = report_name(job, project_names)

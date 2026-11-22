@@ -18,3 +18,7 @@ Run with `python3` (the `pcbnew` module and `sexpdata` are installed).
 - `zoom.sh PDF OUT.png X0 Y0 W H [DPI]`: crop a region (in mm) of a 1:1 board plot into a
   PNG you can look at. Plot layers with
   `kicad-cli pcb export pdf --mode-single --layers F.Cu,Edge.Cuts --scale 1 -o plot.pdf BOARD`.
+- `brief_lint.py REPORT.md`: flag finding briefs that name a designator, part number,
+  pin or net, that are bold text instead of a `####` heading, or that run past about
+  25 words; the Function, Verdict and First action lines get the same name check.
+  Values ("100 ohm") pass. Run it before finishing; the run record shows its result.

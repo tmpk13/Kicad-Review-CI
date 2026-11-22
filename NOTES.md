@@ -100,6 +100,12 @@ Decisions and pitfalls, with the reasons. Open decisions are in [QUESTIONS.md](Q
   designators start its body. `prompts/ci-context.md` adds the environment, working
   rules, KiCad 10 traps and the completion test; `prompts/context-<owner>.md` adds team
   pointers. A drive file named `review-prompt` overrides the instructions.
+- `tools/brief_lint.py` checks the finding briefs. The model runs it before it finishes
+  and the run record shows its result, so a review that slips back to designator
+  headlines is visible. It is a heuristic built from the tokens of earlier headlines:
+  finding IDs, priority names and "detail S3" references are blanked first, values
+  ("100 ohm", "9.6 A") pass by design, and C3 (the flight computer card) and some
+  technology names are allowlisted.
 
 ## Runner
 

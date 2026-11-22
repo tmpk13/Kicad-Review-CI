@@ -39,6 +39,11 @@ run = "bunx wrangler dev"
 description = "Runner, entrypoint and GitHub action tests (includes the end-to-end test)"
 run = "pixi run pytest -q --tb=short"
 
+[tasks.brief-lint]
+description = "Flag finding briefs that name designators, part numbers, pins or nets in the review reports given as arguments"
+dir = "{{cwd}}"
+run = "python3 {{config_root}}/container/review/tools/brief_lint.py"
+
 [tasks.image]
 description = "Build the review container image with podman"
 run = "podman build -t localhost/hw-review:latest container"

@@ -54,7 +54,8 @@ this review, and nobody watches the session. The deliverable is one report,
 
 ## Done
 
-The review is done when `/out/report.md` follows the task's format, every finding cites
-its evidence (file with sheet or layer, reference and pin, datasheet section), every
-claim that rests on a missing datasheet is marked unverified, and the last line names
-the significant gaps in the review.
+The review is done when `/out/report.md` follows the task's format,
+`python3 /opt/review/tools/brief_lint.py /out/report.md` reports no problems, every
+finding cites its evidence (file with sheet or layer, reference and pin, datasheet
+section), every claim that rests on a missing datasheet is marked unverified, and the
+last line names the significant gaps in the review.

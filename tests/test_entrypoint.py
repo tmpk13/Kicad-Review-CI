@@ -172,6 +172,19 @@ def test_run_record_and_report_name():
     assert ep.report_name(JOB, ["a/x.kicad_pro", "b/y.kicad_pro"]).startswith("oresat-batteries-review-")
 
 
+def test_brief_check_goes_into_the_run_record(dirs):
+    _, out = dirs
+    report = out / "report.md"
+    assert ep.brief_check(report) is None
+    report.write_text("#### P0-1. The card breaker can never trip, so the card has no overcurrent protection.\n")
+    assert ep.brief_check(report) == "every finding brief is a plain-language heading"
+    report.write_text("**P0-1. U14 cannot trip.**\n\n#### P1-1. R33 is 100 ohm.\n")
+    line = ep.brief_check(report)
+    assert line == "2 problems (P0-1, P1-1); run `brief_lint.py` on the report"
+    rows = ep.run_record(JOB, {"result": {}, "turns": 3}, task_ctx(), {"claude": "2.1.323", "kicad": "10.0.8"}, line)
+    assert rows[-2:] == [f"| Brief check | {line} |", f"| Job | {JOB['id']}, https://github.com/{JOB['repo']}/actions/runs/42 |"]
+
+
 def test_describe_tool_prefers_the_useful_field():
     assert ep.describe_tool({"name": "Read", "input": {"file_path": "/work/repo/a.kicad_sch"}}) == "Read: /work/repo/a.kicad_sch"
     assert ep.describe_tool({"name": "TodoWrite", "input": {"todos": []}}) == "TodoWrite"
