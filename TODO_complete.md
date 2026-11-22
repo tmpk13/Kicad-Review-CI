@@ -5,3 +5,4 @@
 - Image smoke test through real Claude Code, podman and kicad-cli; Claude Code given its full tool set (7195183)
 - oresat-batteries `review` branch workflow switched from the batch request to the action (8b418ea in that repository)
 - Runner service installer and example config; README, SETUP, ARCHITECTURE, NOTES, QUESTIONS
+- Review prompt opens each finding with a plain-language heading brief, the team style of 2026-11-22 (d7bb584)
