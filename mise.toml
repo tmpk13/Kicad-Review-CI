@@ -9,7 +9,7 @@ WRANGLER_SEND_METRICS = "false"
 
 [tasks.test]
 description = "Run every offline test: relay, Apps Script, Python and end to end"
-depends = ["relay-test", "py-test"]
+depends = ["relay-test", "apps-script-test", "py-test"]
 
 [tasks.relay-install]
 description = "Install the relay's pinned dev dependencies (wrangler, TypeScript)"
@@ -17,9 +17,13 @@ dir = "relay"
 run = "bun install --frozen-lockfile"
 
 [tasks.relay-test]
-description = "Relay and Apps Script unit tests plus the relay in workerd"
+description = "Relay unit tests plus the relay in workerd (Miniflare)"
 dir = "relay"
 run = "bun test"
+
+[tasks.apps-script-test]
+description = "Apps Script Drive bridge against stand-in Google services"
+run = "bun test apps-script"
 
 [tasks.relay-check]
 description = "Type-check the relay and dry-run the Cloudflare bundle"

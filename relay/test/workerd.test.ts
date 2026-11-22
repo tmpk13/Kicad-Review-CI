@@ -6,54 +6,10 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
+import { ANTHROPIC_KEY, RUNNER_TOKEN, startRelay, type Relay } from "./harness";
 import { claims, makeSigner, startUpstreams, type FakeUpstreams, type Signer } from "./helpers";
 
-const ROOT = join(import.meta.dir, "..");
-const HAVE_MINIFLARE = existsSync(join(ROOT, "node_modules/miniflare/package.json"));
-const RUNNER_TOKEN = "runner-secret-token";
-const ANTHROPIC_KEY = "sk-ant-real-key";
-
-interface Relay {
-    url: string;
-    dispose(): Promise<void>;
-}
-
-let script: string;
-
-export async function startRelay(up: FakeUpstreams, extra: Record<string, string> = {}): Promise<Relay> {
-    const { Miniflare, convertV4MiniflareOptions } = await import("miniflare");
-    if (!script) {
-        const built = await Bun.build({
-            entrypoints: [join(ROOT, "src/index.ts")],
-            format: "esm",
-            target: "browser",
-            external: ["cloudflare:workers"],
-        });
-        if (!built.success) throw new Error(built.logs.map(String).join("\n"));
-        script = await built.outputs[0].text();
-    }
-    const mf = new Miniflare(
-        convertV4MiniflareOptions({
-            modules: true,
-            script,
-            compatibilityDate: "2026-10-01",
-            durableObjects: { HUB: { className: "Hub", useSQLite: true } },
-            bindings: {
-                ANTHROPIC_API_KEY: ANTHROPIC_KEY,
-                RUNNER_TOKEN,
-                APPS_SCRIPT_URL: `${up.url}/exec`,
-                APPS_SCRIPT_KEY: "apps-script-key",
-                ALLOWED_REPOS: "oresat/*",
-                DRIVE_CONFIG: JSON.stringify({ "oresat/*": { read: ["readFolder001"], upload: "uploadFolder1" } }),
-                GITHUB_OIDC_JWKS_URL: `${up.url}/jwks`,
-                ANTHROPIC_UPSTREAM: up.url,
-                ...extra,
-            },
-        }),
-    );
-    const base = await mf.ready;
-    return { url: base.toString().replace(/\/$/, ""), dispose: () => mf.dispose() };
-}
+const HAVE_MINIFLARE = existsSync(join(import.meta.dir, "../node_modules/miniflare/package.json"));
 
 describe.skipIf(!HAVE_MINIFLARE)("relay in workerd", () => {
     let signer: Signer;

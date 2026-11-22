@@ -77,14 +77,75 @@ export interface FakeUpstreams {
     stop(): void;
 }
 
-// One server for every outside party the relay talks to, told apart by path prefix.
-export function startUpstreams(signer: Signer): FakeUpstreams {
+export interface UpstreamOptions {
+    // When set, a /v1/messages request that offers the Write tool (and holds no tool
+    // result yet) is answered with a Write call creating this file: real Claude Code
+    // then writes a report without a real model.
+    writeReportTo?: string;
+    reportText?: string;
+}
+
+function sse(events: unknown[]): Response {
+    const stream = new ReadableStream({
+        async start(controller) {
+            for (const e of events) {
+                const type = (e as { type: string }).type;
+                controller.enqueue(new TextEncoder().encode(`event: ${type}\ndata: ${JSON.stringify(e)}\n\n`));
+                await Bun.sleep(5);
+            }
+            controller.close();
+        },
+    });
+    return new Response(stream, { headers: { "content-type": "text/event-stream", "request-id": "req_test" } });
+}
+
+let messageCounter = 0;
+
+// A Messages API stand-in: plain text, or one Write tool call (see UpstreamOptions).
+function fakeMessage(raw: string, opts: UpstreamOptions): Response {
+    let body: any = {};
+    try {
+        body = JSON.parse(raw || "{}");
+    } catch {
+        body = {};
+    }
+    const messages: any[] = body.messages ?? [];
+    const answered = messages.some((m) => Array.isArray(m.content) && m.content.some((b: any) => b.type === "tool_result"));
+    const offersWrite = (body.tools ?? []).some((t: any) => t.name === "Write");
+    const id = `msg_fake_${++messageCounter}`;
+    const usage = { input_tokens: 25, output_tokens: 12, cache_creation_input_tokens: 0, cache_read_input_tokens: 0 };
+    const write = opts.writeReportTo && offersWrite && !answered;
+    const block = write
+        ? { type: "tool_use", id: `toolu_fake_${messageCounter}`, name: "Write", input: { file_path: opts.writeReportTo, content: opts.reportText ?? "# Review\n" } }
+        : { type: "text", text: "Review finished." };
+    const stop = write ? "tool_use" : "end_turn";
+    const message = { id, type: "message", role: "assistant", model: body.model ?? "claude-opus-5-5", content: [block], stop_reason: stop, stop_sequence: null, usage };
+    if (!body.stream) return Response.json(message, { headers: { "request-id": "req_test" } });
+    const startBlock = write ? { ...block, input: {} } : { type: "text", text: "" };
+    const delta = write
+        ? { type: "input_json_delta", partial_json: JSON.stringify((block as any).input) }
+        : { type: "text_delta", text: (block as any).text };
+    return sse([
+        { type: "message_start", message: { ...message, content: [], stop_reason: null, usage: { ...usage, output_tokens: 1 } } },
+        { type: "content_block_start", index: 0, content_block: startBlock },
+        { type: "content_block_delta", index: 0, delta },
+        { type: "content_block_stop", index: 0 },
+        { type: "message_delta", delta: { stop_reason: stop, stop_sequence: null }, usage: { output_tokens: 12 } },
+        { type: "message_stop" },
+    ]);
+}
+
+// One server for every outside party the relay talks to, told apart by path prefix:
+// GitHub's JWKS and OIDC token endpoints, the Anthropic API and the Apps Script web app.
+// GET /_requests returns what it has seen, for tests running in another process.
+export function startUpstreams(signer: Signer, opts: UpstreamOptions = {}): FakeUpstreams {
     const requests: Recorded[] = [];
     const server = Bun.serve({
         port: 0,
         hostname: "127.0.0.1",
         async fetch(req) {
             const u = new URL(req.url);
+            if (u.pathname === "/_requests") return Response.json(requests);
             const rec: Recorded = {
                 method: req.method,
                 path: u.pathname,
@@ -94,24 +155,13 @@ export function startUpstreams(signer: Signer): FakeUpstreams {
             };
             requests.push(rec);
             if (u.pathname === "/jwks") return Response.json(signer.jwks);
-            if (u.pathname === "/v1/messages") {
-                // A short SSE stream, sent in pieces so the test sees streaming pass through.
-                const events = [
-                    'event: message_start\ndata: {"type":"message_start"}\n\n',
-                    'event: content_block_delta\ndata: {"type":"content_block_delta","delta":{"type":"text_delta","text":"hi"}}\n\n',
-                    'event: message_stop\ndata: {"type":"message_stop"}\n\n',
-                ];
-                const stream = new ReadableStream({
-                    async start(controller) {
-                        for (const e of events) {
-                            controller.enqueue(new TextEncoder().encode(e));
-                            await Bun.sleep(5);
-                        }
-                        controller.close();
-                    },
-                });
-                return new Response(stream, { headers: { "content-type": "text/event-stream", "request-id": "req_test" } });
+            if (u.pathname === "/oidc") {
+                // Like ACTIONS_ID_TOKEN_REQUEST_URL: the other query parameters override claims.
+                const { audience, ...over } = rec.query;
+                return Response.json({ value: await signer.sign(claims({ ...over, aud: audience })) });
             }
+            if (u.pathname === "/v1/messages") return fakeMessage(rec.body, opts);
+            if (u.pathname === "/v1/messages/count_tokens") return Response.json({ input_tokens: 42 });
             if (u.pathname === "/v1/models") return Response.json({ data: [{ id: "claude-opus-5-5" }] });
             if (u.pathname === "/exec") {
                 const action = u.searchParams.get("action");
