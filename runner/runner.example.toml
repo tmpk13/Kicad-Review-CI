@@ -1,0 +1,31 @@
+# Runner config. Copy to $HOME/.config/hw-review/runner.toml and edit.
+
+# The relay Worker's URL (Cloudflare dashboard > Workers > hw-review-relay).
+relay_url = "https://hw-review-relay.example.workers.dev"
+# File holding the relay's RUNNER_TOKEN secret, mode 600. HW_REVIEW_RUNNER_TOKEN overrides it.
+token_file = "~/.config/hw-review/runner-token"
+# Shown in the relay's job records; one name per runner process.
+runner_name = "review-host"
+
+image = "localhost/hw-review:latest"
+# One directory per job: the clone, shared-drive files, checks, transcript and report.
+work_root = "~/.local/share/hw-review/jobs"
+keep_jobs = 10
+
+poll_seconds = 20
+heartbeat_seconds = 30
+# The shorter of this and the relay's MAX_RUNTIME_MINUTES applies.
+max_runtime_minutes = 180
+drive_max_file_mb = 25
+
+[podman]
+command = ["podman"]
+memory = "8g"
+cpus = "4"
+pids_limit = 4096
+# Empty: podman's default network. The container needs the internet (GitHub,
+# datasheet sites, the relay) and nothing on the local network.
+network = ""
+# Rootless podman: the image's user 1000 becomes the runner's own user on the host.
+userns = "keep-id:uid=1000,gid=1000"
+extra_args = []

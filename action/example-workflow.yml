@@ -1,0 +1,35 @@
+# Copy to .github/workflows/ in a board repository. Needs the repository variable
+# HW_REVIEW_RELAY_URL; no secrets: the relay trusts GitHub's OIDC token for this job.
+name: PCB design review
+
+on:
+  push:
+    branches: [review]
+  workflow_dispatch:
+    inputs:
+      effort:
+        description: Effort level ("default" uses the relay's setting)
+        type: choice
+        options: [default, low, medium, high, xhigh, max]
+        default: default
+      budget-usd:
+        description: API spend cap in US dollars (empty for the relay's default)
+        type: string
+        default: ""
+
+permissions: {}
+
+jobs:
+  review:
+    if: ${{ !github.event.deleted }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 320
+    permissions:
+      id-token: write
+    steps:
+      - uses: tmpk13/hw-review-ci/action@main
+        with:
+          relay-url: ${{ vars.HW_REVIEW_RELAY_URL }}
+          path: oresat-battery-card
+          effort: ${{ inputs.effort }}
+          budget-usd: ${{ inputs.budget-usd }}

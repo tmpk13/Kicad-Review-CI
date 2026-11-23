@@ -1,0 +1,68 @@
+# Review container: KiCad 10 CLI, Claude Code, git, pandoc and PDF tools.
+# Build: mise run image (podman build -t localhost/hw-review:latest container)
+#
+# Layers run from rarely changed (apt) to often changed (review scripts), so editing
+# a prompt or the entrypoint rebuilds only the last layers.
+
+FROM docker.io/library/ubuntu:24.04 AS base
+ARG DEBIAN_FRONTEND=noninteractive
+ARG KICAD_PPA=ppa:kicad/kicad-10.0-releases
+ENV LANG=C.UTF-8 LC_ALL=C.UTF-8
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends software-properties-common gpg-agent gnupg ca-certificates \
+    && add-apt-repository -y "$KICAD_PPA" \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends \
+        kicad kicad-symbols kicad-footprints \
+        git curl wget jq ripgrep less file unzip xz-utils zstd bc procps \
+        python3 python3-pip python3-venv python3-openpyxl \
+        poppler-utils pandoc \
+    && rm -rf /var/lib/apt/lists/*
+
+# Claude Code native binary, pinned and verified: the release manifest is signed with
+# Anthropic's release key, and the manifest lists the binary's SHA-256.
+FROM base AS claude
+ARG CLAUDE_CODE_VERSION=2.1.323
+ARG CLAUDE_CODE_KEY_FPR=31DDDE24DDFAB679F42D7BD2BAA929FF1A7ECACE
+RUN set -eu; \
+    case "$(dpkg --print-architecture)" in \
+        amd64) plat=linux-x64 ;; arm64) plat=linux-arm64 ;; \
+        *) echo "unsupported architecture" >&2; exit 1 ;; \
+    esac; \
+    base="https://downloads.claude.ai/claude-code-releases/$CLAUDE_CODE_VERSION"; \
+    mkdir -p /tmp/cc/gnupg; chmod 700 /tmp/cc/gnupg; cd /tmp/cc; export GNUPGHOME=/tmp/cc/gnupg; \
+    curl -fsSL https://downloads.claude.ai/keys/claude-code.asc -o key.asc; \
+    gpg --batch --quiet --import key.asc; \
+    gpg --batch --with-colons --fingerprint | grep -q "^fpr:::::::::$CLAUDE_CODE_KEY_FPR:"; \
+    curl -fsSLO "$base/manifest.json"; curl -fsSLO "$base/manifest.json.sig"; \
+    gpg --batch --verify manifest.json.sig manifest.json; \
+    sum=$(jq -er --arg p "$plat" '.platforms[$p].checksum' manifest.json); \
+    curl -fsSL "$base/$plat/claude" -o claude; \
+    echo "$sum  claude" | sha256sum -c -; \
+    install -m 0755 claude /usr/local/bin/claude; \
+    rm -rf /tmp/cc
+
+FROM base
+COPY --from=claude /usr/local/bin/claude /usr/local/bin/claude
+RUN pip install --break-system-packages --no-cache-dir sexpdata==1.0.2 \
+    && (userdel -r ubuntu 2>/dev/null || true) \
+    && useradd -m -u 1000 -s /bin/bash review
+COPY gitconfig /etc/gitconfig
+# Claude Code: no updates or nonessential traffic; long tool timeouts for kicad-cli runs.
+ENV DISABLE_AUTOUPDATER=1 \
+    DISABLE_UPDATES=1 \
+    CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1 \
+    DISABLE_TELEMETRY=1 \
+    DISABLE_ERROR_REPORTING=1 \
+    CLAUDE_CODE_DISABLE_FEEDBACK_SURVEY=1 \
+    BASH_DEFAULT_TIMEOUT_MS=600000 \
+    BASH_MAX_TIMEOUT_MS=1800000 \
+    GIT_TERMINAL_PROMPT=0 \
+    PYTHONDONTWRITEBYTECODE=1
+COPY review/ /opt/review/
+RUN chmod 0755 /opt/review/bin/* /opt/review/tools/* \
+    && claude --version > /opt/review/claude-version \
+    && kicad-cli --version > /opt/review/kicad-version
+USER review
+WORKDIR /work
+ENTRYPOINT ["python3", "/opt/review/bin/entrypoint.py"]

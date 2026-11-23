@@ -1,0 +1,67 @@
+name: hw-review
+description: Ask the hw-review relay for a Claude Code design review of this commit and wait for the report.
+author: hw-review-ci
+
+inputs:
+  relay-url:
+    description: Base URL of the hw-review relay Worker, for example https://hw-review-relay.example.workers.dev
+    required: true
+  path:
+    description: Repository-relative directory holding the KiCad project to review
+    default: "."
+  model:
+    description: Claude model; empty uses the relay's default. Must be on the relay's ALLOWED_MODELS list.
+    default: ""
+  effort:
+    description: "Effort level: low, medium, high, xhigh or max; empty uses the relay's default"
+    default: ""
+  budget-usd:
+    description: API spend cap for this review in US dollars; empty uses the relay's default
+    default: ""
+  audience:
+    description: OIDC audience the relay expects (its OIDC_AUDIENCE variable)
+    default: hw-review-relay
+  wait-minutes:
+    description: Give up (and cancel the review) after this many minutes
+    default: "300"
+  poll-seconds:
+    description: Seconds between status checks
+    default: "60"
+
+outputs:
+  job-id:
+    description: Relay job ID
+    value: ${{ steps.review.outputs.job-id }}
+  status:
+    description: "Final job status: done, failed, canceled, superseded or expired"
+    value: ${{ steps.review.outputs.status }}
+  report-path:
+    description: Path of the Markdown report on the runner
+    value: ${{ steps.review.outputs.report-path }}
+  drive-url:
+    description: Link to the .docx copy in the shared drive
+    value: ${{ steps.review.outputs.drive-url }}
+
+runs:
+  using: composite
+  steps:
+    - id: review
+      shell: bash
+      env:
+        INPUT_RELAY_URL: ${{ inputs.relay-url }}
+        INPUT_PATH: ${{ inputs.path }}
+        INPUT_MODEL: ${{ inputs.model }}
+        INPUT_EFFORT: ${{ inputs.effort }}
+        INPUT_BUDGET_USD: ${{ inputs.budget-usd }}
+        INPUT_AUDIENCE: ${{ inputs.audience }}
+        INPUT_WAIT_MINUTES: ${{ inputs.wait-minutes }}
+        INPUT_POLL_SECONDS: ${{ inputs.poll-seconds }}
+      run: python3 "$GITHUB_ACTION_PATH/review_request.py"
+
+    - if: always() && steps.review.outputs.report-path != ''
+      uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+      with:
+        name: hw-review-${{ steps.review.outputs.job-id }}
+        path: ${{ steps.review.outputs.report-path }}
+        if-no-files-found: warn
+        retention-days: 30

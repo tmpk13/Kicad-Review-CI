@@ -1,0 +1,18 @@
+# System git config for the review container: anonymous HTTPS only.
+# No credential helper is set, so git can read public repositories and nothing else;
+# GIT_TERMINAL_PROMPT=0 (set in the image) makes a private repository fail at once
+# instead of waiting for a password.
+[credential]
+    helper =
+[url "https://github.com/"]
+    insteadOf = git@github.com:
+    insteadOf = ssh://git@github.com/
+[safe]
+    directory = *
+[advice]
+    detachedHead = false
+[init]
+    defaultBranch = main
+[user]
+    name = hw-review
+    email = hw-review@invalid

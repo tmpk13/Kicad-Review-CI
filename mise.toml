@@ -1,0 +1,65 @@
+[tools]
+bun = "1.3.3"
+pixi = "0.66.0"
+actionlint = "1.7.12"
+
+[env]
+# Wrangler and Miniflare run locally only for tests and dry runs; keep their telemetry off.
+WRANGLER_SEND_METRICS = "false"
+
+[tasks.test]
+description = "Run every offline test: relay, Apps Script, Python and end to end"
+depends = ["relay-test", "apps-script-test", "py-test"]
+
+[tasks.relay-install]
+description = "Install the relay's pinned dev dependencies (wrangler, TypeScript)"
+dir = "relay"
+run = "bun install --frozen-lockfile"
+
+[tasks.relay-test]
+description = "Relay unit tests plus the relay in workerd (Miniflare)"
+dir = "relay"
+run = "bun test"
+
+[tasks.apps-script-test]
+description = "Apps Script Drive bridge against stand-in Google services"
+run = "bun test apps-script"
+
+[tasks.relay-check]
+description = "Type-check the relay and dry-run the Cloudflare bundle"
+dir = "relay"
+run = ["bunx tsc --noEmit", "bunx wrangler deploy --dry-run --outdir dist"]
+
+[tasks.relay-dev]
+description = "Run the relay locally in workerd with secrets from relay/.dev.vars"
+dir = "relay"
+run = "bunx wrangler dev"
+
+[tasks.py-test]
+description = "Runner, entrypoint and GitHub action tests (includes the end-to-end test)"
+run = "pixi run pytest -q --tb=short"
+
+[tasks.brief-lint]
+description = "Flag finding briefs that name designators, part numbers, pins or nets in the review reports given as arguments"
+dir = "{{cwd}}"
+run = "python3 {{config_root}}/container/review/tools/brief_lint.py"
+
+[tasks.image]
+description = "Build the review container image with podman"
+run = "podman build -t localhost/hw-review:latest container"
+
+[tasks.image-smoke]
+description = "Run the built image against a local relay and a stand-in Anthropic API"
+run = "pixi run python tests/smoke_image.py"
+
+[tasks.runner]
+description = "Run the job runner in the foreground"
+run = "python3 runner/review_runner.py --config ${HW_REVIEW_RUNNER_CONFIG:-$HOME/.config/hw-review/runner.toml}"
+
+[tasks.runner-install]
+description = "Install the runner as a systemd user service"
+run = "runner/install-service.sh"
+
+[tasks.lint]
+description = "Lint the GitHub workflow and action"
+run = "actionlint -shellcheck= action/example-workflow.yml"

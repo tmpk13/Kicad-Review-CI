@@ -1,0 +1,6 @@
+{
+    "ORESAT_LIBRARIES": {
+        "url": "https://github.com/oresat/oresat-kicad.git",
+        "note": "OreSat symbol, footprint and 3D libraries; the default branch is master"
+    }
+}
