@@ -28,7 +28,7 @@ MAX_WORDS = 30
 DEFAULT_ALLOW = frozenset({
     "C3", "I2C", "I2S", "USB-C", "DC-DC", "AC-DC", "AEC-Q100", "AEC-Q101", "AEC-Q200",
     "EEPROM", "MOSFET", "MOSFETS", "SERDES", "DXWIFI", "USB2", "USB3", "CANFD", "OPAMP",
-    "REACH", "SDRAM", "LPDDR", "SPICE",
+    "REACH", "SDRAM", "LPDDR", "SPICE", "README",
     "DDR2", "DDR3", "DDR4", "DDR5", "LPDDR4", "LPDDR5",
 })
 

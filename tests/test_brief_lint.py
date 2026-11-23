@@ -44,6 +44,7 @@ def test_old_headlines_are_flagged(headline, expected):
     "The C3's watchdog line has 4 uA of margin; 2 Mohm to ground anywhere opens a cell switch "
     "(P1-3, detail S3).",
     "The 12 pF crystal capacitors leave the I2C and USB-C clocks 100 ppm fast; see P2.",
+    "Sheet notes and the README contradict the design in many places.",
 ])
 def test_plain_briefs_and_values_pass(brief):
     assert lint.names(brief) == []
