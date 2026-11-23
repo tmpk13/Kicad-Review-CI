@@ -1,9 +1,10 @@
-# hw-review-ci
+# Kicad-Review-CI
 
 Automated hardware design reviews. A push to a board repository's review branch asks a
 Cloudflare relay for a review; a runner host picks up the job and runs Claude Code in a
 podman container with git, KiCad 10 and the team's shared-drive files. The report comes
-back to the GitHub run and lands in the shared drive as a .docx.
+back to the GitHub run and lands in the shared drive as a .docx. The review prompts in
+[container/review/prompts/](container/review/prompts/) also serve hand-run reviews.
 
 One-time setup: [SETUP.md](SETUP.md). How the parts connect: [ARCHITECTURE.md](ARCHITECTURE.md).
 Why it is built this way: [NOTES.md](NOTES.md).

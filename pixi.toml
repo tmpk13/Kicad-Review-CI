@@ -1,5 +1,5 @@
 [workspace]
-name = "hw-review-ci"
+name = "kicad-review-ci"
 channels = ["conda-forge"]
 platforms = ["linux-64"]
 

@@ -1,6 +1,6 @@
 name: hw-review
 description: Ask the hw-review relay for a Claude Code design review of this commit and wait for the report.
-author: hw-review-ci
+author: Kicad-Review-CI
 
 inputs:
   relay-url:

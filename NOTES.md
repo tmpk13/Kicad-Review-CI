@@ -57,6 +57,10 @@ Decisions and pitfalls, with the reasons. Open decisions are in [QUESTIONS.md](Q
   work is worth more than a restart.
 - Board workflows use the composite action from this repository, so a fix ships to
   every board at once. Its script uses only the standard library of the runner's python3.
+- The repository lives in a personal account, `tmpk13/Kicad-Review-CI`, not the oresat
+  organization: its owner controls the Cloudflare connection and releases without an
+  organization admin, and OreSat repositories can use a public action from any account.
+  Board workflows name it `tmpk13/Kicad-Review-CI/action@main`.
 
 ## Container
 
@@ -94,12 +98,18 @@ Decisions and pitfalls, with the reasons. Open decisions are in [QUESTIONS.md](Q
 - Time limits nest: the runner writes `deadline_epoch` into job.json; the entrypoint
   stops Claude Code (SIGINT, then a kill 30 s later) five minutes before it, leaving time
   for the .docx; the runner stops the container 60 s after it.
-- The review instructions are the workspace's PCB review prompt in ASCII
-  (`prompts/review-task.md`), with the team's finding style: each finding opens with a
+- The review instructions are the PCB review prompt (`prompts/review-task.md`), the same
+  file manual reviews use, so CI and hand-run reviews follow one text. It carries the
+  team's finding style: each finding opens with a
   plain-language heading brief (no designators, part numbers, pins or nets), and the
   designators start its body. `prompts/ci-context.md` adds the environment, working
   rules, KiCad 10 traps and the completion test; `prompts/context-<owner>.md` adds team
   pointers. A drive file named `review-prompt` overrides the instructions.
+- `prompts/review-task-screenshots.md` is for manual reviews and the container never
+  reads it: `review-task.md` verbatim plus a Screenshots section with an embedded,
+  tested `pcb_shot.py` that plots each board finding's area with only the layers that
+  show it. It is a full copy, not an addendum, so it can be handed to a session as one
+  file; copy any change to `review-task.md` into it by hand.
 - `tools/brief_lint.py` checks the finding briefs. The model runs it before it finishes
   and the run record shows its result, so a review that slips back to designator
   headlines is visible. It is a heuristic built from the tokens of earlier headlines:

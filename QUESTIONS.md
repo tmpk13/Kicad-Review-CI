@@ -3,13 +3,6 @@
 Each recommended option is already applied; an answer only redirects that work.
 Answer on the `Answer:` line or in chat (`Q2 B`).
 
-## Q1. Should hw-review-ci live in your account or in the oresat organization?
-Why it matters: board workflows name the action by its repository (`uses: <owner>/hw-review-ci/action@main`), and Cloudflare builds the relay from that repository.
-- A. Your account, `tmpk13/hw-review-ci` (recommended): you control the Cloudflare connection and releases; OreSat repositories can use a public action from any account.
-- B. `oresat/hw-review-ci`: shared ownership; an organization admin has to install Cloudflare's GitHub app.
-Applied: A, in the oresat-batteries workflow (8b418ea in that repository) and `action/example-workflow.yml`.
-Answer:
-
 ## Q2. Should the runner or the container upload the .docx to the shared drive?
 Why it matters: whatever uploads needs a Drive credential, and the container runs an agent that reads untrusted datasheets and web pages.
 - A. The runner (recommended): the container makes the .docx; the runner, outside the agent's reach, uploads it and also does the downloads.

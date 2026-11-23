@@ -27,7 +27,7 @@ jobs:
     permissions:
       id-token: write
     steps:
-      - uses: tmpk13/hw-review-ci/action@main
+      - uses: tmpk13/Kicad-Review-CI/action@main
         with:
           relay-url: ${{ vars.HW_REVIEW_RELAY_URL }}
           path: oresat-battery-card

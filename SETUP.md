@@ -15,7 +15,8 @@ never sees it. The spend limit is the backstop if anything else fails.
 Cloudflare builds and deploys the Worker from this repository on every push to the
 production branch; nothing runs `wrangler` on a workstation.
 
-1. Push this repository to GitHub. It must be public for board repositories in other
+1. Push this repository to `github.com/tmpk13/Kicad-Review-CI`, the name board
+   workflows give in `uses:`. It must be public for board repositories in other
    accounts to use its action.
 2. Cloudflare dashboard: Workers & Pages > Create > Import a repository. Choose this
    repository, then set

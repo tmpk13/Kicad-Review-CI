@@ -7,3 +7,4 @@
 - Runner service installer and example config; README, SETUP, ARCHITECTURE, NOTES, QUESTIONS
 - Review prompt opens each finding with a plain-language heading brief, the team style of 2026-11-22 (d7bb584)
 - Brief lint for finding briefs, run by the model before it finishes and shown in the run record; prompt gains a word cap and grouped-finding briefs (64b578e)
+- Moved into Kicad-Review-CI with full history; screenshot review prompt joins the base prompt, with a test that it keeps every base line; action named `tmpk13/Kicad-Review-CI/action@main`
